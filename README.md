@@ -23,7 +23,9 @@ A sketch of an automated deployment system, based on catching webhooks from the 
 * Tracking of the most-recent version of each repo+tag in etcd.
 * Only allow one restart at a time via a lock in etcd.
 
-I'm thinking of the app as a sequence of channels:
+I'm thinking of the app as a sequence of channels.
+
+The external triggers are:
 
 * Build callback webhook: Send forcePull=repository[].repo_name to update channel.
 
@@ -37,14 +39,14 @@ I'm thinking of the app as a sequence of channels:
 
 1. Issue list-images. For a given repo+tag, compare result with etcd:
     *  etcd has lower CreatedAt: update etcd
-    *  etcd hash higher CreatedAt or repo=forcePull: send to image pull channel
+    *  etcd hash higher CreatedAt or repo=forcePull: send to image-pull channel
 3. Issue list-containers:
     *  for each Image =~ /^[0-9a-f]{12,}$/
     *    Send Names[0] to Restart channel
 
 ### Image-pull channel
 
-* Given a repo and tag, issue docker pull.  On success, send forcePull=nil to image-list channel.
+* Given a repo and tag, issue docker pull.  On success, send forcePull=nil to update channel.
   
 ### Restart channel
 
