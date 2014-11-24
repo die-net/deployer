@@ -20,13 +20,16 @@ A sketch of an automated deployment system, based on catching webhooks from the 
 * Running on each machine in the cluster
 * Using [go-dockerclient](https://github.com/fsouza/go-dockerclient) to communicate with Docker
 * Getting [webhooks](https://docs.docker.com/docker-hub/builds/#webhooks) from the Docker Hub build service
-* Coordinating via etcd
+* Tracking of the most-recent version of each repo+tag in etcd.
+* Only allow one restart at a time via a lock in etcd.
 
 I'm thinking of the app as a sequence of channels:
 
 * Build callback webhook: Send forcePull=repository[].repo_name to update channel.
 
 * Docker events watcher: On docker "untag" event, send forcePull=nil to update channel.
+
+* etcd watcher: When another instance of deployer writes to list of images maintained in etcd, send forcePull=nil to the update channel.
 
 * Hourly timer: Send forcePull=nil to image list channel.
 
