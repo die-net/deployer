@@ -25,10 +25,10 @@ func main() {
 		log.Fatalln("Couldn't docker.NewClient: ", err)
 	}
 
-        deployer := NewDeployer(client, "", docker.AuthConfiguration{})
-        stale, err := deployer.FindStaleContainers()
-        if err != nil {
-                log.Fatalln(err)
-        }
-        fmt.Println(stale)
+	deployer := NewDeployer(client, "", docker.AuthConfiguration{}, 10)
+	stale, err := deployer.FindStaleContainers()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(stale)
 }
