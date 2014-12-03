@@ -30,5 +30,11 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println(stale)
+	for _, container := range stale {
+		fmt.Printf("Stopping container %s\n", container.ID)
+		container.Stop()
+		if err != nil {
+			fmt.Errorf("Stop container error: %+v\n", err)
+		}
+	}
 }
