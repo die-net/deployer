@@ -9,21 +9,31 @@ var (
 	IsID = regexp.MustCompile("^[0-9a-f]{12,}$")
 )
 
-func (deployer *Deployer) FindStaleContainers() ([]Container, error) {
-	apicontainers, err := client.ListContainers(docker.ListContainersOptions{})
+// A filter func returns true if the container should be added to list.
+type FilterContainer func(apicontainer *docker.APIContainers) bool
+
+func (deployer *Deployer) FindContainers(options docker.ListContainersOptions, filter FilterContainer) ([]Container, error) {
+	apicontainers, err := deployer.client.ListContainers(options)
 	if err != nil {
 		return nil, err
 	}
 
 	stale := make([]Container, 0, 5)
 	for _, apicontainer := range apicontainers {
-		// If image is an ID, it means the tag got reassigned.
-		if IsID.MatchString(apicontainer.Image) {
+		if filter(&apicontainer) {
 			stale = append(stale, deployer.NewContainer(apicontainer))
 		}
 	}
 
 	return stale, nil
+}
+
+func (deployer *Deployer) FindStaleContainers() ([]Container, error) {
+	filter := func(apicontainer *docker.APIContainers) bool {
+		// If image is an ID, it means the tag got reassigned.
+		return IsID.MatchString(apicontainer.Image)
+	}
+	return deployer.FindContainers(docker.ListContainersOptions{}, filter)
 }
 
 type Container struct {
