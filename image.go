@@ -10,17 +10,19 @@ import (
 )
 
 func (deployer *Deployer) FindRepoTags(repo string) ([]string, error) {
-	images, err := client.ListImages(false)
+	images, err := deployer.client.ListImages(docker.ListImagesOptions{All: false})
 	if err != nil {
 		return nil, err
 	}
 
-	repo = repo + ":"
+	if repo != "" {
+		repo = repo + ":"
+	}
 	repotags := make([]string, 0, 5)
 
 	for _, image := range images {
 		for _, repotag := range image.RepoTags {
-			if strings.HasPrefix(repotag, repo) {
+			if repo == "" || strings.HasPrefix(repotag, repo) {
 				repotags = append(repotags, repotag)
 			}
 		}
@@ -29,19 +31,32 @@ func (deployer *Deployer) FindRepoTags(repo string) ([]string, error) {
 	return repotags, nil
 }
 
+func (deployer *Deployer) repoUpdateWorker() {
+	for repo := range deployer.repoUpdate {
+		deployer.ImageUpdateRepo(repo)
+	}
+}
+
 func (deployer *Deployer) ImageUpdateRepo(repo string) error {
 	repotags, err := deployer.FindRepoTags(repo)
 	if err != nil {
 		return err
 	}
 
-	for _, repotag := range repotags {
-		deployer.ImagePull(repotag)
-	}
-	return nil
+	return deployer.PullImages(repotags)
 }
 
-func (deployer *Deployer) ImagePull(repotag string) error {
+func (deployer *Deployer) PullImages(repotags []string) error {
+	var ret error
+	for _, repotag := range repotags {
+		if err := deployer.PullImage(repotag); err != nil {
+			ret = err
+		}
+	}
+	return ret
+}
+
+func (deployer *Deployer) PullImage(repotag string) error {
 	repo, tag := splitTwo(repotag, ":")
 	if tag == "" {
 		return ErrNoTag

@@ -2,16 +2,20 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	docker "github.com/fsouza/go-dockerclient"
 	"log"
 	"runtime"
 )
 
 var (
-	endpoint   = flag.String("docker", "unix:///var/run/docker.sock", "Docker endpoint to connect to.")
-	maxThreads = flag.Int("max_threads", runtime.NumCPU(), "Maximum number of running threads.")
-	client     *docker.Client
+	endpoint     = flag.String("docker", "unix:///var/run/docker.sock", "Docker endpoint to connect to.")
+	maxThreads   = flag.Int("max_threads", runtime.NumCPU(), "Maximum number of running threads.")
+	registry     = flag.String("registry", "", "URL of docker registry.")
+	authUsername = flag.String("auth-username", "", "Username for authentication to docker registry.")
+	authPassword = flag.String("auth-password", "", "Password for authentication to docker registry.")
+	authEmail    = flag.String("auth-email", "", "Email address for authentication to docker registry.")
+	authServer   = flag.String("auth-server", "", "Server address for authentication to docker registry.")
+	killTimeout  = flag.Int("kill_timeout", 10, "Container stop timeout, before hard kill (in seconds).")
 )
 
 func main() {
@@ -19,22 +23,20 @@ func main() {
 
 	runtime.GOMAXPROCS(*maxThreads)
 
-	var err error
-	client, err = docker.NewClient(*endpoint)
+	client, err := docker.NewClient(*endpoint)
 	if err != nil {
 		log.Fatalln("Couldn't docker.NewClient: ", err)
 	}
 
-	deployer := NewDeployer(client, "", docker.AuthConfiguration{}, 10)
-	stale, err := deployer.FindStaleContainers()
-	if err != nil {
-		log.Fatalln(err)
+	auth := docker.AuthConfiguration{
+		Username:      *authUsername,
+		Password:      *authPassword,
+		Email:         *authEmail,
+		ServerAddress: *authServer,
 	}
-	for _, container := range stale {
-		fmt.Printf("Stopping container %s\n", container.ID)
-		container.Stop()
-		if err != nil {
-			fmt.Errorf("Stop container error: %+v\n", err)
-		}
-	}
+
+	deployer := NewDeployer(client, *registry, auth, uint(*killTimeout))
+
+	deployer.ImageUpdateRepo("")
+	deployer.StopStaleContainers()
 }

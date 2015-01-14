@@ -2,6 +2,7 @@ package main
 
 import (
 	docker "github.com/fsouza/go-dockerclient"
+	"log"
 	"regexp"
 )
 
@@ -12,23 +13,33 @@ var (
 // A filter func returns true if the container should be added to list.
 type FilterContainer func(apicontainer *docker.APIContainers) bool
 
-func (deployer *Deployer) FindContainers(options docker.ListContainersOptions, filter FilterContainer) ([]Container, error) {
+func (deployer *Deployer) FindContainers(options docker.ListContainersOptions, filter FilterContainer) ([]docker.APIContainers, error) {
 	apicontainers, err := deployer.client.ListContainers(options)
 	if err != nil {
 		return nil, err
 	}
 
-	stale := make([]Container, 0, 5)
+	ret := make([]docker.APIContainers, 0, 5)
 	for _, apicontainer := range apicontainers {
 		if filter(&apicontainer) {
-			stale = append(stale, deployer.NewContainer(apicontainer))
+			ret = append(ret, apicontainer)
 		}
 	}
 
-	return stale, nil
+	return ret, nil
 }
 
-func (deployer *Deployer) FindStaleContainers() ([]Container, error) {
+func (deployer *Deployer) StopContainers(containers []docker.APIContainers) {
+	for _, container := range containers {
+		log.Println("Stopping container ", container.ID)
+		err := deployer.client.StopContainer(container.ID, deployer.killTimeout)
+		if err != nil {
+			log.Println("Stop container error: ", err)
+		}
+	}
+}
+
+func (deployer *Deployer) FindStaleContainers() ([]docker.APIContainers, error) {
 	filter := func(apicontainer *docker.APIContainers) bool {
 		// If image is an ID, it means the tag got reassigned.
 		return IsID.MatchString(apicontainer.Image)
@@ -36,23 +47,11 @@ func (deployer *Deployer) FindStaleContainers() ([]Container, error) {
 	return deployer.FindContainers(docker.ListContainersOptions{}, filter)
 }
 
-type Container struct {
-	deployer *Deployer
-	docker.APIContainers
-}
-
-func (deployer *Deployer) NewContainer(apicontainer docker.APIContainers) Container {
-	container := Container{
-		deployer:      deployer,
-		APIContainers: apicontainer,
+func (deployer *Deployer) StopStaleContainers() {
+	containers, err := deployer.FindStaleContainers()
+	if err != nil {
+		log.Println("FindStaleContainers error ", err)
+	} else {
+		deployer.StopContainers(containers)
 	}
-	return container
-}
-
-func (container *Container) Restart() error {
-	return container.deployer.client.RestartContainer(container.ID, container.deployer.killTimeout)
-}
-
-func (container *Container) Stop() error {
-	return container.deployer.client.StopContainer(container.ID, container.deployer.killTimeout)
 }

@@ -5,28 +5,25 @@ import (
 	"net/http"
 )
 
+func (deployer *Deployer) RegisterDockerHubWebhook(path string) {
+	http.HandleFunc(path, deployer.DockerHubWebhookHandler)
+}
+
 type DockerHubWebhook struct {
-	CallbackURL string              `json:"callback_url"`
-	Repository  DockerHubRepository `json:"repository"`
+	Repository struct {
+		RepoName string `json:"repo_name"`
+	} `json:"repository"`
 }
 
-type DockerHubRepository struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-	Owner     string `json:"owner"`
-	RepoName  string `json:"repo_name"`
-}
-
-func DockerHubWebhookHandler(rw http.ResponseWriter, req *http.Request) {
+func (deployer *Deployer) DockerHubWebhookHandler(rw http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 
 	var webhook DockerHubWebhook
 	if err := decoder.Decode(&webhook); err != nil {
 	}
 
-	//	repo := webhook.Repository.RepoName
-}
-
-func init() {
-	http.HandleFunc("/api/dockerhub/", DockerHubWebhookHandler)
+	repo := webhook.Repository.RepoName
+	if repo != "" {
+		deployer.repoUpdate <- repo
+	}
 }

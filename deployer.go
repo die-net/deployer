@@ -15,6 +15,7 @@ type Deployer struct {
 	client      *docker.Client
 	registry    string
 	auth        docker.AuthConfiguration
+	repoUpdate  chan string
 	killTimeout uint
 
 	dockerEvents chan *docker.APIEvents
@@ -25,8 +26,11 @@ func NewDeployer(client *docker.Client, registry string, auth docker.AuthConfigu
 		client:      client,
 		registry:    registry,
 		auth:        auth,
+		repoUpdate:  make(chan string, 100),
 		killTimeout: killTimeout,
 	}
+
+	go deployer.repoUpdateWorker()
 
 	return deployer
 }
