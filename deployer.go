@@ -1,14 +1,8 @@
 package main
 
 import (
-	"flag"
 	docker "github.com/fsouza/go-dockerclient"
 	"time"
-)
-
-var (
-	refresh = flag.Duration("refresh", time.Minute, "Polling frequency of local docker status")
-	repull  = flag.Duration("repull", time.Hour*24, "Polling frequency of remote docker repositories")
 )
 
 type Deployer struct {
