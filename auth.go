@@ -12,36 +12,40 @@ var (
 	ErrCfgNotFound = fmt.Errorf("Dockercfg is missing entry for registry.")
 )
 
+// Undocumented format for ~/.dockercfg file.
 type DockerCfg map[string]struct {
-	docker.AuthConfiguration
-	Auth string `json:auth`
+	docker.AuthConfiguration        // Decode most fields directly into our return format.
+	Auth                     string `json:auth` // Allow "auth" field too, so we can convert.
 }
 
 func AuthFromDockerCfg(file, registry string) (docker.AuthConfiguration, error) {
-	auth := docker.AuthConfiguration{}
+	empty := docker.AuthConfiguration{}
 
 	content, err := ioutil.ReadFile(file)
 	if err != nil {
-		return auth, err
+		return empty, err
 	}
 
-	cfg := DockerCfg{}
-	if err := json.Unmarshal(content, &cfg); err != nil {
-		return auth, err
+	cfgs := DockerCfg{}
+	if err := json.Unmarshal(content, &cfgs); err != nil {
+		return empty, err
 	}
 
-        r, ok := cfg[registry]
-        if !ok {
-		return auth, ErrCfgNotFound
+	cfg, ok := cfgs[registry]
+	if !ok {
+		return empty, ErrCfgNotFound
 	}
 
-	r.ServerAddress = registry
-	if r.Auth != "" {
-		creds, err := base64.StdEncoding.DecodeString(r.Auth)
+	// Split apart base64 "auth" field into Username and Password.
+	if cfg.Auth != "" {
+		creds, err := base64.StdEncoding.DecodeString(cfg.Auth)
 		if err != nil {
-			return auth, err
+			return empty, err
 		}
-		r.Username, r.Password = splitTwo(string(creds), ":")
+		cfg.Username, cfg.Password = splitTwo(string(creds), ":")
 	}
-	return r.AuthConfiguration, nil
+
+	cfg.ServerAddress = registry
+
+	return cfg.AuthConfiguration, nil
 }
