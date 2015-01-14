@@ -17,5 +17,3 @@ RUN apt-get -q update && \
     rm -rf /usr/local/go /app/pkg && \
     apt-get -y -q remove git && \
     apt-get -y -q autoremove
-
-USER nobody
