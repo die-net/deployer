@@ -34,7 +34,7 @@ func (deployer *Deployer) StopContainers(containers []docker.APIContainers) {
 		log.Println("Stopping container ", container.ID)
 		err := deployer.client.StopContainer(container.ID, deployer.killTimeout)
 		if err != nil {
-			log.Println("Stop container error: ", err)
+			log.Println("Stop container", err)
 		}
 	}
 }
@@ -50,7 +50,7 @@ func (deployer *Deployer) FindStaleContainers() ([]docker.APIContainers, error) 
 func (deployer *Deployer) StopStaleContainers() {
 	containers, err := deployer.FindStaleContainers()
 	if err != nil {
-		log.Println("FindStaleContainers error ", err)
+		log.Println("FindStaleContainers", err)
 	} else {
 		deployer.StopContainers(containers)
 	}

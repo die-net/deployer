@@ -6,6 +6,7 @@ package main
 
 import (
 	docker "github.com/fsouza/go-dockerclient"
+	"log"
 	"strings"
 )
 
@@ -50,6 +51,7 @@ func (deployer *Deployer) PullImages(repotags []string) error {
 	var ret error
 	for _, repotag := range repotags {
 		if err := deployer.PullImage(repotag); err != nil {
+			log.Println("PullImage", err)
 			ret = err
 		}
 	}
@@ -67,6 +69,8 @@ func (deployer *Deployer) PullImage(repotag string) error {
 		Registry:   deployer.registry,
 		Tag:        tag,
 	}
+
+	log.Println("PullImage", repotag)
 
 	return deployer.client.PullImage(opts, deployer.auth)
 }
