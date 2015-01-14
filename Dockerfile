@@ -1,5 +1,7 @@
 FROM debian:stable
 
+EXPOSE 4500
+
 ADD . /app/src/github.com/die-net/deployer
 
 ENTRYPOINT ["/app/bin/deployer"]

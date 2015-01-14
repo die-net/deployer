@@ -21,7 +21,7 @@ type Deployer struct {
 	dockerEvents chan *docker.APIEvents
 }
 
-func NewDeployer(client *docker.Client, registry string, auth docker.AuthConfiguration, killTimeout uint) *Deployer {
+func NewDeployer(client *docker.Client, registry string, auth docker.AuthConfiguration, killTimeout uint, pullPeriod time.Duration) *Deployer {
 	deployer := &Deployer{
 		client:      client,
 		registry:    registry,
@@ -31,6 +31,10 @@ func NewDeployer(client *docker.Client, registry string, auth docker.AuthConfigu
 	}
 
 	go deployer.repoUpdateWorker()
+
+	if pullPeriod.Nanoseconds() > 0 {
+		go deployer.repoTimerWorker(pullPeriod)
+	}
 
 	return deployer
 }

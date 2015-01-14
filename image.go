@@ -8,6 +8,7 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 	"log"
 	"strings"
+	"time"
 )
 
 func (deployer *Deployer) FindRepoTags(repo string) ([]string, error) {
@@ -32,9 +33,18 @@ func (deployer *Deployer) FindRepoTags(repo string) ([]string, error) {
 	return repotags, nil
 }
 
+func (deployer *Deployer) repoTimerWorker(period time.Duration) {
+	tick := time.NewTicker(period)
+	for {
+		deployer.repoUpdate <- "" // Update all.
+		<-tick.C
+	}
+}
+
 func (deployer *Deployer) repoUpdateWorker() {
 	for repo := range deployer.repoUpdate {
 		deployer.ImageUpdateRepo(repo)
+		deployer.StopStaleContainers()
 	}
 }
 
