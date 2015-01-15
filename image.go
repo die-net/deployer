@@ -24,6 +24,9 @@ func (deployer *Deployer) FindRepoTags(repo string) ([]string, error) {
 
 	for _, image := range images {
 		for _, repotag := range image.RepoTags {
+			if repotag == "<none>:<none>" {
+				continue
+			}
 			if repo == "" || strings.HasPrefix(repotag, repo) {
 				repotags = append(repotags, repotag)
 			}

@@ -31,7 +31,7 @@ func (deployer *Deployer) FindContainers(options docker.ListContainersOptions, f
 
 func (deployer *Deployer) StopContainers(containers []docker.APIContainers) {
 	for _, container := range containers {
-		log.Println("Stopping container ", container.ID)
+		log.Println("Stopping container", container.ID, container.Names)
 		err := deployer.client.StopContainer(container.ID, deployer.killTimeout)
 		if err != nil {
 			log.Println("Stop container", err)
