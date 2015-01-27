@@ -11,14 +11,20 @@ import (
 	"time"
 )
 
+// Find valid repotags in the list of local images.  Accepts 3 forms:
+// "*"        - Match any repotag.
+// "foo"      - Match any repotag in the repo "foo".
+// "foo:bar"  - Exact match the repotag "foo:bar" if it exists.
 func (deployer *Deployer) FindRepoTags(repo string) ([]string, error) {
 	images, err := deployer.client.ListImages(docker.ListImagesOptions{All: false})
 	if err != nil {
 		return nil, err
 	}
 
+	prefix := false
 	if repo != "" {
 		repo = repo + ":"
+		prefix = true
 	}
 	repotags := make([]string, 0, 5)
 
@@ -27,7 +33,9 @@ func (deployer *Deployer) FindRepoTags(repo string) ([]string, error) {
 			if repotag == "<none>:<none>" {
 				continue
 			}
-			if repo == "" || strings.HasPrefix(repotag, repo) {
+			if repo == "*" || repo == repotag {
+				repotags = append(repotags, repotag)
+			} else if prefix && strings.HasPrefix(repotag, repo) {
 				repotags = append(repotags, repotag)
 			}
 		}
@@ -39,7 +47,7 @@ func (deployer *Deployer) FindRepoTags(repo string) ([]string, error) {
 func (deployer *Deployer) repoTimerWorker(period time.Duration) {
 	tick := time.NewTicker(period)
 	for {
-		deployer.repoUpdate <- "" // Update all.
+		deployer.repoUpdate <- "*" // Update all.
 		<-tick.C
 	}
 }
