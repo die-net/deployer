@@ -2,17 +2,21 @@ package main
 
 import (
 	"flag"
-	docker "github.com/fsouza/go-dockerclient"
+	goetcd "github.com/coreos/go-etcd/etcd"
+	godocker "github.com/fsouza/go-dockerclient"
 	"log"
 	"net/http"
 	_ "net/http/pprof" // Adds http://*/debug/pprof/ to default mux.
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
 var (
 	endpoint     = flag.String("docker", "unix:///var/run/docker.sock", "Docker endpoint to connect to.")
+	etcdNodes    = flag.String("etcd_nodes", "http://127.0.0.1:4001", "Comma-seperated list of etcd nodes to connect to.")
+	etcdPrefix   = flag.String("etcd_prefix", "/deployer", "Path prefix for etcd nodes.")
 	dockerCfg    = flag.String("dockercfg", os.Getenv("HOME")+"/.dockercfg", "Path to .dockercfg authentication information.")
 	listenAddr   = flag.String("listen", ":4500", "[IP]:port to listen for incoming connections.")
 	maxThreads   = flag.Int("max_threads", runtime.NumCPU(), "Maximum number of running threads.")
@@ -27,12 +31,14 @@ func main() {
 
 	runtime.GOMAXPROCS(*maxThreads)
 
-	client, err := docker.NewClient(*endpoint)
+	docker, err := godocker.NewClient(*endpoint)
 	if err != nil {
 		log.Fatalln("Couldn't docker.NewClient: ", err)
 	}
 
-	auth := docker.AuthConfiguration{}
+	etcd := goetcd.NewClient(strings.Split(*etcdNodes, ","))
+
+	auth := godocker.AuthConfiguration{}
 	if *dockerCfg != "" {
 		auth, err = AuthFromDockerCfg(*dockerCfg, *registry)
 		if err != nil {
@@ -40,7 +46,7 @@ func main() {
 		}
 	}
 
-	deployer := NewDeployer(client, *registry, auth, uint(*killTimeout), *repullPeriod)
+	deployer := NewDeployer(docker, *registry, auth, etcd, *etcdPrefix, uint(*killTimeout), *repullPeriod)
 	deployer.RegisterDockerHubWebhook(*webhookPath)
 
 	log.Fatal(http.ListenAndServe(*listenAddr, nil))

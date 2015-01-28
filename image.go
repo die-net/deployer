@@ -16,7 +16,7 @@ import (
 // "foo"      - Match any repotag in the repo "foo".
 // "foo:bar"  - Exact match the repotag "foo:bar" if it exists.
 func (deployer *Deployer) FindRepoTags(repo string) ([]string, error) {
-	images, err := deployer.client.ListImages(docker.ListImagesOptions{All: false})
+	images, err := deployer.docker.ListImages(docker.ListImagesOptions{All: false})
 	if err != nil {
 		return nil, err
 	}
@@ -93,5 +93,5 @@ func (deployer *Deployer) PullImage(repotag string) error {
 
 	log.Println("PullImage", repotag)
 
-	return deployer.client.PullImage(opts, deployer.auth)
+	return deployer.docker.PullImage(opts, deployer.auth)
 }

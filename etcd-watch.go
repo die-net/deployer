@@ -5,16 +5,16 @@ import (
 )
 
 type Watch struct {
-	client  *goetcd.Client
-	prefix  string
-	updates chan<- *goetcd.Node
+	client *goetcd.Client
+	prefix string
+	C      chan *goetcd.Node
 }
 
 func NewWatch(client *goetcd.Client, prefix string, limit int) *Watch {
 	watch := &Watch{
-		client:  client,
-		prefix:  prefix,
-		updates: make(chan<- *goetcd.Node, limit),
+		client: client,
+		prefix: prefix,
+		C:      make(chan *goetcd.Node, limit),
 	}
 
 	go watch.worker()
@@ -26,7 +26,7 @@ func (watch *Watch) worker() {
 	// Fetch all current keys under this prefix, recursively.
 	resp, err := watch.client.Get(watch.prefix, true, true)
 	if err != nil {
-		close(watch.updates)
+		close(watch.C)
 		return
 	}
 
@@ -40,7 +40,7 @@ func (watch *Watch) worker() {
 		// Fetch the next changed node for this prefix after index.
 		resp, err = watch.client.Watch(watch.prefix, index+1, true, nil, nil)
 		if err != nil {
-			close(watch.updates)
+			close(watch.C)
 			return
 		}
 
@@ -54,7 +54,7 @@ func (watch *Watch) worker() {
 
 func (watch *Watch) sendNodes(node *goetcd.Node) {
 	if !node.Dir {
-		watch.updates <- node
+		watch.C <- node
 		return
 	}
 

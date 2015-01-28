@@ -1,25 +1,28 @@
 package main
 
 import (
-	docker "github.com/fsouza/go-dockerclient"
+	goetcd "github.com/coreos/go-etcd/etcd"
+	godocker "github.com/fsouza/go-dockerclient"
 	"time"
 )
 
 type Deployer struct {
-	client      *docker.Client
+	docker      *godocker.Client
 	registry    string
-	auth        docker.AuthConfiguration
+	auth        godocker.AuthConfiguration
+	etcd        *goetcd.Client
+	etcdPrefix  string
 	repoUpdate  chan string
 	killTimeout uint
-
-	dockerEvents chan *docker.APIEvents
 }
 
-func NewDeployer(client *docker.Client, registry string, auth docker.AuthConfiguration, killTimeout uint, pullPeriod time.Duration) *Deployer {
+func NewDeployer(docker *godocker.Client, registry string, auth godocker.AuthConfiguration, etcd *goetcd.Client, etcdPrefix string, killTimeout uint, pullPeriod time.Duration) *Deployer {
 	deployer := &Deployer{
-		client:      client,
+		docker:      docker,
 		registry:    registry,
 		auth:        auth,
+		etcd:        etcd,
+		etcdPrefix:  etcdPrefix,
 		repoUpdate:  make(chan string, 100),
 		killTimeout: killTimeout,
 	}

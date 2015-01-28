@@ -3,10 +3,14 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"path"
+	"time"
 )
 
 func (deployer *Deployer) RegisterDockerHubWebhook(path string) {
 	http.HandleFunc(path, deployer.DockerHubWebhookHandler)
+
+	go deployer.webhookWatchWorker()
 }
 
 type DockerHubWebhook struct {
@@ -24,6 +28,13 @@ func (deployer *Deployer) DockerHubWebhookHandler(rw http.ResponseWriter, req *h
 
 	repo := webhook.Repository.RepoName
 	if repo != "" {
-		deployer.repoUpdate <- repo
+		deployer.etcd.Set(deployer.etcdPrefix+"/"+repo, time.Now().String(), 0)
+	}
+}
+
+func (deployer *Deployer) webhookWatchWorker() {
+	watch := NewWatch(deployer.etcd, deployer.etcdPrefix, 100)
+	for node := range watch.C {
+		deployer.repoUpdate <- path.Base(node.Key)
 	}
 }

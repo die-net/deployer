@@ -14,7 +14,7 @@ var (
 type FilterContainer func(apicontainer *docker.APIContainers) bool
 
 func (deployer *Deployer) FindContainers(options docker.ListContainersOptions, filter FilterContainer) ([]docker.APIContainers, error) {
-	apicontainers, err := deployer.client.ListContainers(options)
+	apicontainers, err := deployer.docker.ListContainers(options)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (deployer *Deployer) FindContainers(options docker.ListContainersOptions, f
 func (deployer *Deployer) StopContainers(containers []docker.APIContainers) {
 	for _, container := range containers {
 		log.Println("Stopping container", container.ID, container.Names)
-		err := deployer.client.StopContainer(container.ID, deployer.killTimeout)
+		err := deployer.docker.StopContainer(container.ID, deployer.killTimeout)
 		if err != nil {
 			log.Println("Stop container", err)
 		}
