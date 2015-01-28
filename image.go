@@ -72,7 +72,6 @@ func (deployer *Deployer) PullImages(repotags []string) error {
 	var ret error
 	for _, repotag := range repotags {
 		if err := deployer.PullImage(repotag); err != nil {
-			log.Println("PullImage", err)
 			ret = err
 		}
 	}
@@ -91,7 +90,11 @@ func (deployer *Deployer) PullImage(repotag string) error {
 		Tag:        tag,
 	}
 
-	log.Println("PullImage", repotag)
+	log.Println("Pulling image", repotag)
 
-	return deployer.docker.PullImage(opts, deployer.auth)
+	err := deployer.docker.PullImage(opts, deployer.auth)
+	if err != nil {
+		log.Println("PullImage", err)
+	}
+	return err
 }

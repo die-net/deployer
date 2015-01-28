@@ -15,7 +15,7 @@ var (
 // Undocumented format for ~/.dockercfg file.
 type DockerCfg map[string]struct {
 	docker.AuthConfiguration        // Decode most fields directly into our return format.
-	Auth                     string `json:auth` // Allow "auth" field too, so we can convert.
+	Auth                     string `json:"auth"` // Allow "auth" field too, so we can convert.
 }
 
 func AuthFromDockerCfg(file, registry string) (docker.AuthConfiguration, error) {

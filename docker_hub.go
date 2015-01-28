@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"path"
 	"time"
@@ -14,7 +15,8 @@ func (deployer *Deployer) RegisterDockerHubWebhook(path string) {
 }
 
 type DockerHubWebhook struct {
-	Repository struct {
+	CallbackURL string `json:"callback_url"`
+	Repository  struct {
 		RepoName string `json:"repo_name"`
 	} `json:"repository"`
 }
@@ -24,17 +26,25 @@ func (deployer *Deployer) DockerHubWebhookHandler(rw http.ResponseWriter, req *h
 
 	var webhook DockerHubWebhook
 	if err := decoder.Decode(&webhook); err != nil {
+		return
 	}
 
 	repo := webhook.Repository.RepoName
+	log.Println("Webhook received for", repo)
+
 	if repo != "" {
-		deployer.etcd.Set(deployer.etcdPrefix+"/"+repo, time.Now().String(), 0)
+		key := deployer.etcdPrefix + "/" + repo
+		if _, err := deployer.etcd.Set(key, time.Now().String(), 0); err != nil {
+			log.Println("Webhook couldn't etcd.Set", key, err)
+		}
 	}
 }
 
 func (deployer *Deployer) webhookWatchWorker() {
 	watch := NewWatch(deployer.etcd, deployer.etcdPrefix, 100)
 	for node := range watch.C {
-		deployer.repoUpdate <- path.Base(node.Key)
+		repo := path.Base(node.Key)
+		log.Println("Etcd watch received for", repo)
+		deployer.repoUpdate <- repo
 	}
 }
