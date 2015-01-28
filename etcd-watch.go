@@ -2,6 +2,7 @@ package main
 
 import (
 	goetcd "github.com/coreos/go-etcd/etcd"
+	"log"
 )
 
 type Watch struct {
@@ -26,6 +27,7 @@ func (watch *Watch) worker() {
 	// Fetch all current keys under this prefix, recursively.
 	resp, err := watch.client.Get(watch.prefix, true, true)
 	if err != nil {
+		log.Println("Watch etcd.Get error", watch.prefix, err)
 		close(watch.C)
 		return
 	}
@@ -40,6 +42,7 @@ func (watch *Watch) worker() {
 		// Fetch the next changed node for this prefix after index.
 		resp, err = watch.client.Watch(watch.prefix, index+1, true, nil, nil)
 		if err != nil {
+			log.Println("Watch etcd.Watch error", watch.prefix, err)
 			close(watch.C)
 			return
 		}
@@ -54,6 +57,7 @@ func (watch *Watch) worker() {
 
 func (watch *Watch) sendNodes(node *goetcd.Node) {
 	if !node.Dir {
+		log.Println("Watch found", node)
 		watch.C <- node
 		return
 	}

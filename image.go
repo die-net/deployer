@@ -94,7 +94,7 @@ func (deployer *Deployer) PullImage(repotag string) error {
 
 	err := deployer.docker.PullImage(opts, deployer.auth)
 	if err != nil {
-		log.Println("PullImage", err)
+		log.Println("Pull image error", repotag, err)
 	}
 	return err
 }
