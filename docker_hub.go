@@ -40,13 +40,10 @@ func (deployer *Deployer) DockerHubWebhookHandler(rw http.ResponseWriter, req *h
 }
 
 func (deployer *Deployer) webhookWatchWorker() {
-	for {
-		watch := NewWatch(deployer.etcd, deployer.etcdPrefix, 100)
-		for node := range watch.C {
-			log.Println("Etcd watch received for", node.Key)
-			deployer.repoUpdate <- node.Key
-		}
-		log.Println("Etcd watcher died.  Restarting in 1 minute.")
-		time.Sleep(time.Minute)
+	watch := NewWatch(deployer.etcd, deployer.etcdPrefix, 100)
+	for node := range watch.C {
+		log.Println("Etcd watch received for", node.Key)
+		deployer.repoUpdate <- node.Key
 	}
+	log.Fatalln("Etcd watcher died.")
 }
