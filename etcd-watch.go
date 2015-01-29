@@ -58,7 +58,7 @@ func (watch *Watch) worker() {
 
 func (watch *Watch) sendNodes(node *goetcd.Node) {
 	if !node.Dir {
-		node.Key = strings.TrimPrefix(node.Key, watch.prefix + "/")
+		node.Key = strings.TrimPrefix(node.Key, watch.prefix+"/")
 		watch.C <- node
 		return
 	}

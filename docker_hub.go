@@ -10,6 +10,10 @@ import (
 func (deployer *Deployer) RegisterDockerHubWebhook(path string) {
 	http.HandleFunc(path, deployer.DockerHubWebhookHandler)
 
+	if _, err := deployer.etcd.SetDir(deployer.etcdPrefix, 0); err != nil {
+		log.Fatalln("Webhook etcd.SetDir error", deployer.etcdPrefix, err)
+	}
+
 	go deployer.webhookWatchWorker()
 }
 
