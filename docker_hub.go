@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"path"
 	"time"
 )
 
@@ -43,8 +42,7 @@ func (deployer *Deployer) DockerHubWebhookHandler(rw http.ResponseWriter, req *h
 func (deployer *Deployer) webhookWatchWorker() {
 	watch := NewWatch(deployer.etcd, deployer.etcdPrefix, 100)
 	for node := range watch.C {
-		repo := path.Base(node.Key)
-		log.Println("Etcd watch received for", repo)
-		deployer.repoUpdate <- repo
+		log.Println("Etcd watch received for", node.Key)
+		deployer.repoUpdate <- node.Key
 	}
 }

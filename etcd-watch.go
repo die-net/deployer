@@ -3,6 +3,7 @@ package main
 import (
 	goetcd "github.com/coreos/go-etcd/etcd"
 	"log"
+	"strings"
 )
 
 type Watch struct {
@@ -12,6 +13,9 @@ type Watch struct {
 }
 
 func NewWatch(client *goetcd.Client, prefix string, limit int) *Watch {
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
 	watch := &Watch{
 		client: client,
 		prefix: prefix,
@@ -57,6 +61,7 @@ func (watch *Watch) worker() {
 
 func (watch *Watch) sendNodes(node *goetcd.Node) {
 	if !node.Dir {
+		node.Key = strings.TrimPrefix(node.Key, watch.prefix)
 		log.Println("Watch found", node)
 		watch.C <- node
 		return
