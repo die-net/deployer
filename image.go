@@ -22,7 +22,7 @@ func (deployer *Deployer) FindRepoTags(repo string) ([]string, error) {
 	}
 
 	prefix := false
-	if repo != "" {
+	if repo != "*" && !strings.Contains(repo, ":") {
 		repo = repo + ":"
 		prefix = true
 	}
