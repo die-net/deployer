@@ -9,9 +9,10 @@ import (
 )
 
 type Watch struct {
-	client *goetcd.Client
-	prefix string
-	C      chan *goetcd.Node
+	client    *goetcd.Client
+	prefix    string
+	sentIndex uint64
+	C         chan *goetcd.Node
 }
 
 func NewWatch(client *goetcd.Client, prefix string, limit int) *Watch {
@@ -37,50 +38,63 @@ func (watch *Watch) worker() {
 		}
 	}
 
-	// Fetch all current keys under this prefix, recursively.
-	resp, err := watch.client.Get(watch.prefix, true, true)
-	if err != nil {
-		log.Println("Watch etcd.Get error", watch.prefix, err)
-		return
-	}
-
-	// Find all non-directory nodes and send each to the channel.
-	watch.sendNodes(resp.Node)
-
-	// Start watching for updates after the initial update.
-	index := resp.EtcdIndex
-
 	for {
+		// Fetch all current keys under this prefix, recursively.
+		resp, err := watch.client.Get(watch.prefix, true, true)
+		if err != nil {
+			log.Println("Watch etcd.Get error", watch.prefix, err)
+			return
+		}
+
+		// Find all non-directory nodes and send each to the channel.
+		watch.sendNodes(resp.Node)
+
+		// Start watching for updates after the current index given in the Get.
+		index := resp.EtcdIndex
+
 		// Fetch the next changed node for this prefix after index.
 		resp, err = watch.client.Watch(watch.prefix, index+1, true, nil, nil)
 		if err != nil {
 			// TODO: Etcd closes the connection after 5 minutes,
-			// resulting in a json.SyntaxError.  Improve this?
+			// resulting in a json.SyntaxError.  Retry watch.
 			if _, ok := err.(*json.SyntaxError); ok {
 				time.Sleep(*etcdRetryDelay)
 				continue
+			}
+
+			// 401 means our index is too old, and we need to Get a new one.
+			if e, ok := err.(*goetcd.EtcdError); ok && e.ErrorCode == 401 {
+				time.Sleep(*etcdRetryDelay)
+				break
 			}
 
 			log.Println("Watch etcd.Watch error", watch.prefix, err)
 			return
 		}
 
-		// Send the changed node(s) to the update channel.
-		watch.sendNodes(resp.Node)
-
-		// Watch again for changes after this.
-		index = resp.Node.ModifiedIndex
+		// Send the changed node(s) to the update channel, track largest index we've sent.
+		if i := watch.sendNodes(resp.Node); i > index {
+			index = i
+		}
 	}
 }
 
-func (watch *Watch) sendNodes(node *goetcd.Node) {
+func (watch *Watch) sendNodes(node *goetcd.Node) uint64 {
 	if !node.Dir {
-		node.Key = strings.TrimPrefix(node.Key, watch.prefix+"/")
-		watch.C <- node
-		return
+		// Send this to channel if it is not a repeat.
+		if node.ModifiedIndex > watch.sentIndex {
+			node.Key = strings.TrimPrefix(node.Key, watch.prefix+"/")
+			watch.C <- node
+		}
+		return node.ModifiedIndex
 	}
 
+	var index uint64
 	for _, node := range node.Nodes {
-		watch.sendNodes(node)
+		// Iterate into directory, track largest index we've seen.
+		if i := watch.sendNodes(node); i > index {
+			index = i
+		}
 	}
+	return index
 }
