@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	goetcd "github.com/coreos/go-etcd/etcd"
 	"log"
 	"strings"
+	"time"
 )
 
 type Watch struct {
@@ -52,6 +54,13 @@ func (watch *Watch) worker() {
 		// Fetch the next changed node for this prefix after index.
 		resp, err = watch.client.Watch(watch.prefix, index+1, true, nil, nil)
 		if err != nil {
+			// TODO: Etcd closes the connection after 5 minutes,
+			// resulting in a json.SyntaxError.  Improve this?
+			if _, ok := err.(*json.SyntaxError); ok {
+				time.Sleep(*etcdRetryDelay)
+				continue
+			}
+
 			log.Println("Watch etcd.Watch error", watch.prefix, err)
 			return
 		}
