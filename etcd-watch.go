@@ -75,6 +75,7 @@ func (watch *Watch) worker() {
 		// Send the changed node(s) to the update channel, track largest index we've sent.
 		if i := watch.sendNodes(resp.Node); i > index {
 			index = i
+			watch.sentIndex = i
 		}
 	}
 }
