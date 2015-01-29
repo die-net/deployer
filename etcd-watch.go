@@ -29,7 +29,7 @@ func (watch *Watch) worker() {
 
 	if _, err := watch.client.SetDir(watch.prefix, 0); err != nil {
 		// Ignore error code 102 (directory exists).
-		if e, ok := err.(goetcd.EtcdError); !ok || e.ErrorCode != 102 {
+		if e, ok := err.(*goetcd.EtcdError); !ok || e.ErrorCode != 102 {
 			log.Println("Watch etcd.SetDir error", watch.prefix, err)
 			return
 		}
