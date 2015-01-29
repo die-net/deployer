@@ -25,11 +25,20 @@ func NewWatch(client *goetcd.Client, prefix string, limit int) *Watch {
 }
 
 func (watch *Watch) worker() {
+	defer close(watch.C)
+
+	if _, err := watch.client.SetDir(watch.prefix, 0); err != nil {
+		// Ignore error code 102 (directory exists).
+		if e, ok := err.(goetcd.EtcdError); !ok || e.ErrorCode != 102 {
+			log.Println("Watch etcd.SetDir error", watch.prefix, err)
+			return
+		}
+	}
+
 	// Fetch all current keys under this prefix, recursively.
 	resp, err := watch.client.Get(watch.prefix, true, true)
 	if err != nil {
 		log.Println("Watch etcd.Get error", watch.prefix, err)
-		close(watch.C)
 		return
 	}
 
@@ -44,7 +53,6 @@ func (watch *Watch) worker() {
 		resp, err = watch.client.Watch(watch.prefix, index+1, true, nil, nil)
 		if err != nil {
 			log.Println("Watch etcd.Watch error", watch.prefix, err)
-			close(watch.C)
 			return
 		}
 
