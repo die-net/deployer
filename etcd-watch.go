@@ -46,36 +46,42 @@ func (watch *Watch) worker() {
 			return
 		}
 
-		// Find all non-directory nodes and send each to the channel.
-		watch.sendNodes(resp.Node)
-
 		// Start watching for updates after the current index given in the Get.
 		index := resp.EtcdIndex
 
-		// Fetch the next changed node for this prefix after index.
-		resp, err = watch.client.Watch(watch.prefix, index+1, true, nil, nil)
-		if err != nil {
-			// TODO: Etcd closes the connection after 5 minutes,
-			// resulting in a json.SyntaxError.  Retry watch.
-			if _, ok := err.(*json.SyntaxError); ok {
-				time.Sleep(*etcdRetryDelay)
-				continue
+		log.Println("Watch etcd.Watch starting index", index, watch.prefix)
+
+		// Find all non-directory nodes and send each to the channel.
+		watch.sendNodes(resp.Node)
+
+		for {
+			// Fetch the next changed node for this prefix after index.
+			resp, err = watch.client.Watch(watch.prefix, index+1, true, nil, nil)
+			if err != nil {
+				// TODO: Etcd closes the connection after 5 minutes,
+				// resulting in a json.SyntaxError.  Retry watch.
+				if _, ok := err.(*json.SyntaxError); ok {
+					log.Println("Watch etcd.Watch retrying connection", watch.prefix)
+					time.Sleep(*etcdRetryDelay)
+					continue
+				}
+
+				// 401 means our index is too old, and we need to Get a new one.
+				if e, ok := err.(*goetcd.EtcdError); ok && e.ErrorCode == 401 {
+					log.Println("Watch etcd.Watch index", index+1, "too old", watch.prefix)
+					time.Sleep(*etcdRetryDelay)
+					break
+				}
+
+				log.Println("Watch etcd.Watch error", watch.prefix, err)
+				return
 			}
 
-			// 401 means our index is too old, and we need to Get a new one.
-			if e, ok := err.(*goetcd.EtcdError); ok && e.ErrorCode == 401 {
-				time.Sleep(*etcdRetryDelay)
-				break
+			// Send the changed node(s) to the update channel, track largest index we've sent.
+			if i := watch.sendNodes(resp.Node); i > index {
+				index = i
+				watch.sentIndex = i
 			}
-
-			log.Println("Watch etcd.Watch error", watch.prefix, err)
-			return
-		}
-
-		// Send the changed node(s) to the update channel, track largest index we've sent.
-		if i := watch.sendNodes(resp.Node); i > index {
-			index = i
-			watch.sentIndex = i
 		}
 	}
 }
