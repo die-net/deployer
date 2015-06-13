@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	goetcd "github.com/coreos/go-etcd/etcd"
+	"io"
 	"log"
 	"strings"
 	"time"
@@ -60,7 +61,7 @@ func (watch *Watch) worker() {
 			if err != nil {
 				// TODO: Etcd closes the connection after 5 minutes,
 				// resulting in a json.SyntaxError.  Retry watch.
-				if _, ok := err.(*json.SyntaxError); ok {
+				if _, ok := err.(*json.SyntaxError); ok || err == io.EOF {
 					log.Println("Watch etcd.Watch retrying connection", watch.prefix)
 					time.Sleep(*etcdRetryDelay)
 					continue
