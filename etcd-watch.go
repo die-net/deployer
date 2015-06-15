@@ -91,6 +91,7 @@ func (watch *Watch) sendNodes(node *goetcd.Node) uint64 {
 	if !node.Dir {
 		// Send this to channel if it is not a repeat.
 		if node.ModifiedIndex > watch.sentIndex {
+			log.Println("Watch etcd.Watch sendNodes sending ", node)
 			node.Key = strings.TrimPrefix(node.Key, watch.prefix+"/")
 			watch.C <- node
 		}
