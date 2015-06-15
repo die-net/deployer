@@ -52,25 +52,26 @@ func (watch *Watch) worker() {
 
 		log.Println("Watch etcd.Watch starting index", index, watch.prefix)
 
-		// Find all non-directory nodes and send each to the channel.
-		watch.sendNodes(resp.Node)
+		// Find all non-directory nodes and send each to the channel.  This will catch up
+		// on any nodes created before we started and any missed during connection retry.
+		if i := watch.sendNodes(resp.Node); i > watch.sentIndex {
+			watch.sentIndex = i
+		}
 
 		for {
 			// Fetch the next changed node for this prefix after index.
 			resp, err = watch.client.Watch(watch.prefix, index+1, true, nil, nil)
 			if err != nil {
-				// TODO: Etcd closes the connection after 5 minutes,
-				// resulting in a json.SyntaxError.  Retry watch.
+				// After 5 minutes, etcd either closes the connection
+				// or returns a json.SyntaxError. Retry watch.
 				if _, ok := err.(*json.SyntaxError); ok || err == io.EOF {
 					log.Println("Watch etcd.Watch retrying connection", watch.prefix)
-					time.Sleep(*etcdRetryDelay)
-					continue
+					break
 				}
 
 				// 401 means our index is too old, and we need to Get a new one.
 				if e, ok := err.(*goetcd.EtcdError); ok && e.ErrorCode == 401 {
 					log.Println("Watch etcd.Watch index", index+1, "too old", watch.prefix)
-					time.Sleep(*etcdRetryDelay)
 					break
 				}
 
@@ -80,10 +81,16 @@ func (watch *Watch) worker() {
 
 			// Send the changed node(s) to the update channel, track largest index we've sent.
 			if i := watch.sendNodes(resp.Node); i > index {
+				if i < watch.sentIndex {
+					log.Println("Watch etcd.Watch bug: found old nodes again")
+					return
+				}
 				index = i
 				watch.sentIndex = i
 			}
 		}
+
+		time.Sleep(*etcdRetryDelay)
 	}
 }
 
