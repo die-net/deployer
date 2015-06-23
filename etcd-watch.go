@@ -48,14 +48,20 @@ func (watch *Watch) worker() {
 			return
 		}
 
+		log.Println("Watch etcd.Watch starting index", resp.EtcdIndex, watch.prefix)
+
 		// Start watching for updates after the current watchIndex given in the Get.
 		watch.watchIndex = resp.EtcdIndex
-
-		log.Println("Watch etcd.Watch starting index", watch.watchIndex, watch.prefix)
 
 		// Find all non-directory nodes and send each to the channel.  This will catch up
 		// on any nodes created before we started and any missed during connection retry.
 		watch.sendNodes(resp.Node)
+
+		// It should be impossible for EtcdIndex to be less than any node.ModifiedIndex or watch.sentIndex.
+		if resp.EtcdIndex < watch.watchIndex || resp.EtcdIndex < watch.sentIndex {
+			log.Println("Watch etcd.Watch initial EtcdIndex", resp.EtcdIndex, "less than ModifiedIndex", watch.watchIndex, "or sentIndex", watch.sentIndex)
+			return
+		}
 
 		for {
 			// Fetch the next changed node for this prefix after watchIndex.
