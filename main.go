@@ -40,6 +40,7 @@ func main() {
 
 	etcd := goetcd.NewClient(strings.Split(*etcdNodes, ","))
 	etcd.SetDialTimeout(*etcdDialTimeout)
+	etcd.SetConsistency(goetcd.STRONG_CONSISTENCY)
 
 	// Add a delay for each retry attempt
 	etcd.CheckRetry = func(cluster *goetcd.Cluster, numReqs int, lastResp http.Response, err error) error {
