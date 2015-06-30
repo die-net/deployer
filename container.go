@@ -29,6 +29,10 @@ func (deployer *Deployer) FindContainers(options docker.ListContainersOptions, f
 	return ret, nil
 }
 
+func (deployer *Deployer) InspectContainer(id string) (*docker.Container, error) {
+	return deployer.docker.InspectContainer(id)
+}
+
 func (deployer *Deployer) StopContainers(containers []docker.APIContainers) {
 	for _, container := range containers {
 		log.Println("Stopping container", container.ID, container.Names)
@@ -40,9 +44,23 @@ func (deployer *Deployer) StopContainers(containers []docker.APIContainers) {
 }
 
 func (deployer *Deployer) FindStaleContainers() ([]docker.APIContainers, error) {
+	repotagMap, err := deployer.ListRepotags()
+	if err != nil {
+		return nil, err
+	}
+
 	filter := func(apicontainer *docker.APIContainers) bool {
 		// If image is an ID, it means the tag got reassigned.
-		return IsID.MatchString(apicontainer.Image)
+		if IsID.MatchString(apicontainer.Image) {
+			return true
+		}
+
+		// Otherwise, apicontainer.ID is a repotag.  Make sure image container is running is still current.
+		if container, err := deployer.InspectContainer(apicontainer.ID); err == nil && repotagMap[apicontainer.Image] != container.Image {
+			return true
+		}
+
+		return false
 	}
 	return deployer.FindContainers(docker.ListContainersOptions{}, filter)
 }

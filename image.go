@@ -44,6 +44,25 @@ func (deployer *Deployer) FindRepoTags(repo string) ([]string, error) {
 	return repotags, nil
 }
 
+func (deployer *Deployer) ListRepotags() (map[string]string, error) {
+	images, err := deployer.docker.ListImages(docker.ListImagesOptions{All: false})
+	if err != nil {
+		return nil, err
+	}
+
+	repotagMap := make(map[string]string)
+	for _, image := range images {
+		for _, repotag := range image.RepoTags {
+			if repotag == "<none>:<none>" {
+				continue
+			}
+			repotagMap[repotag] = image.ID
+		}
+	}
+
+	return repotagMap, nil
+}
+
 func (deployer *Deployer) repoTimerWorker(period time.Duration) {
 	tick := time.NewTicker(period)
 	for {
