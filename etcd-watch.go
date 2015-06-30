@@ -19,9 +19,11 @@ type Watch struct {
 
 func NewWatch(client *goetcd.Client, prefix string, limit int) *Watch {
 	watch := &Watch{
-		client: client,
-		prefix: prefix,
-		C:      make(chan *goetcd.Node, limit),
+		client:     client,
+		prefix:     prefix,
+		watchIndex: 0,
+		sentIndex:  0,
+		C:          make(chan *goetcd.Node, limit),
 	}
 
 	go watch.worker()
@@ -57,10 +59,13 @@ func (watch *Watch) worker() {
 		// on any nodes created before we started and any missed during connection retry.
 		watch.sendNodes(resp.Node)
 
-		// It should be impossible for EtcdIndex to be less than any node.ModifiedIndex or watch.sentIndex.
+		// With strongConsistency, it should be impossible for EtcdIndex
+		// to be less than any node.ModifiedIndex or watch.sentIndex.
 		if resp.EtcdIndex < watch.watchIndex || resp.EtcdIndex < watch.sentIndex {
 			log.Println("Watch etcd.Watch initial EtcdIndex", resp.EtcdIndex, "less than ModifiedIndex", watch.watchIndex, "or sentIndex", watch.sentIndex)
-			return
+			if *strongConsistency {
+				return
+			}
 		}
 
 		for {
