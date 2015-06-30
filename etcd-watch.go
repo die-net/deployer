@@ -44,7 +44,7 @@ func (watch *Watch) worker() {
 
 	for {
 		// Fetch all current keys under this prefix, recursively.
-		resp, err := watch.client.Get(watch.prefix, true, true)
+		resp, err := watch.client.Get(watch.prefix, false, true)
 		if err != nil {
 			log.Println("Watch etcd.Get error", watch.prefix, err)
 			return
@@ -61,11 +61,8 @@ func (watch *Watch) worker() {
 
 		// With strongConsistency, it should be impossible for EtcdIndex
 		// to be less than any node.ModifiedIndex or watch.sentIndex.
-		if resp.EtcdIndex < watch.watchIndex || resp.EtcdIndex < watch.sentIndex {
-			log.Println("Watch etcd.Watch initial EtcdIndex", resp.EtcdIndex, "less than ModifiedIndex", watch.watchIndex, "or sentIndex", watch.sentIndex)
-			if *strongConsistency {
-				return
-			}
+		if resp.EtcdIndex < watch.sentIndex {
+			log.Println("Watch etcd.Watch initial EtcdIndex", resp.EtcdIndex, "less than sentIndex", watch.sentIndex)
 		}
 
 		for {
@@ -90,26 +87,23 @@ func (watch *Watch) worker() {
 			}
 
 			// Send the changed node(s) to the update channel
-			watch.sendNodes(resp.Node)
+			watch.watchIndex = watch.sendNodes(resp.Node)
 		}
 
 		time.Sleep(*etcdRetryDelay)
 	}
 }
 
-func (watch *Watch) sendNodes(node *goetcd.Node) {
+func (watch *Watch) sendNodes(node *goetcd.Node) uint64 {
 	i := watch.sendNodesRecursively(node)
-
-	// This resets on reconnect, so track independently of sentIndex.
-	if i > watch.watchIndex {
-		watch.watchIndex = i
-	}
 
 	// sendNodesRecursively won't encounter nodes in order.  Only update
 	// sentIndex when it is done.
 	if i > watch.sentIndex {
 		watch.sentIndex = i
 	}
+
+	return i
 }
 
 func (watch *Watch) sendNodesRecursively(node *goetcd.Node) uint64 {
