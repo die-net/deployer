@@ -28,6 +28,7 @@ var (
 	strongConsistency = flag.Bool("strong_consistency", false, "Set etcd consistency level as strong.")
 	webhookPath       = flag.String("webhook_path", "/api/dockerhub/webhook", "Path to webhook from Docker Hub.")
 	slackWebhookURL   = flag.String("slack_webhook_url", os.Getenv("SLACK_WEBHOOK_URL"), "Slack incoming webhook url (optional)")
+	slackUsername     = flag.String("slack_username", "Deployer", "Username to show in slack.")
 	slack             *SlackClient
 )
 
@@ -65,7 +66,7 @@ func main() {
 	deployer.RegisterDockerHubWebhook(*webhookPath)
 
 	if *slackWebhookURL != "" {
-		slack = NewSlackClient(*slackWebhookURL)
+		slack = NewSlackClient(*slackWebhookURL, *slackUsername)
 	}
 
 	log.Fatal(http.ListenAndServe(*listenAddr, nil))

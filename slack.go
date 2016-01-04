@@ -9,10 +9,6 @@ import (
 	"time"
 )
 
-var (
-	PayloadMissing = errors.New("Payload missing")
-)
-
 type SlackPayload struct {
 	UnfurlLinks bool   `json:"unfurl_links,omitempty"`
 	Username    string `json:"username,omitempty"`
@@ -24,17 +20,19 @@ type SlackPayload struct {
 
 type SlackClient struct {
 	webhook    string
+	username   string
 	httpClient http.Client
 }
 
 // NewSlackClient returns a Client with the provided webhook url (default timeout to 10 seconds)
-func NewSlackClient(webhook string) *SlackClient {
+func NewSlackClient(webhook, username string) *SlackClient {
 	httpClient := http.Client{
 		Timeout: time.Duration(10 * time.Second),
 	}
 
 	c := &SlackClient{
 		webhook:    webhook,
+		username:   username,
 		httpClient: httpClient,
 	}
 	return c
@@ -43,6 +41,8 @@ func NewSlackClient(webhook string) *SlackClient {
 // Send sends a text message to the default channel unless overridden
 // https://api.slack.com/incoming-webhooks
 func (c *SlackClient) Send(p SlackPayload) error {
+	p.Username = c.username
+
 	body, err := json.Marshal(p)
 	if err != nil {
 		return err

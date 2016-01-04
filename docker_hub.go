@@ -5,11 +5,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"regexp"
 	"time"
 )
-
-var dockerfileRegexp = regexp.MustCompile(`docker build -t [^ ]+`)
 
 func (deployer *Deployer) RegisterDockerHubWebhook(path string) {
 	http.HandleFunc(path, deployer.DockerHubWebhookHandler)
@@ -20,9 +17,8 @@ func (deployer *Deployer) RegisterDockerHubWebhook(path string) {
 type DockerHubWebhook struct {
 	CallbackURL string `json:"callback_url"`
 	Repository  struct {
-		RepoName   string `json:"repo_name"`
-		RepoURL    string `json:"repo_url"`
-		Dockerfile string `json:"dockerfile"`
+		RepoName string `json:"repo_name"`
+		RepoURL  string `json:"repo_url"`
 	} `json:"repository"`
 }
 
@@ -43,14 +39,7 @@ func (deployer *Deployer) DockerHubWebhookHandler(rw http.ResponseWriter, req *h
 
 	repo := webhook.Repository.RepoName
 	repoURL := webhook.Repository.RepoURL
-	build := dockerfileRegexp.FindString(webhook.Repository.Dockerfile)
-	text := repo + ": Build complete for " + build + " <" + repoURL + ">"
-	log.Println("Webhook received for", text)
-	if slack != nil {
-		if err := slack.Send(SlackPayload{Text: text}); err != nil {
-			log.Println("Slack error: ", err)
-		}
-	}
+	log.Println("Webhook received for", repo, repoURL)
 
 	now := time.Now().String()
 
