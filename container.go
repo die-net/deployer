@@ -4,6 +4,7 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 	"log"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -36,11 +37,19 @@ func (deployer *Deployer) InspectContainer(id string) (*docker.Container, error)
 
 func (deployer *Deployer) StopContainers(containers []docker.APIContainers) {
 	names := []string{}
+
 	for _, container := range containers {
 		log.Println("Stopping container", container.ID, container.Names)
 		names = append(names, container.Names...)
+
+		err := deployer.docker.StopContainer(container.ID, deployer.killTimeout)
+		if err != nil {
+			log.Println("Stop container", err)
+		}
 	}
+
 	if slack != nil && len(names) > 0 {
+		sort.Strings(names)
 		// Container Names are prefixed by "/".
 		text := "Deploying " + strings.Replace(strings.TrimPrefix(strings.Join(names, " "), "/"), " /", ", ", -1)
 		if err := slack.Send(SlackPayload{Text: text}); err != nil {
