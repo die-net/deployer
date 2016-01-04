@@ -4,6 +4,7 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 	"log"
 	"regexp"
+	"strings"
 )
 
 var (
@@ -36,6 +37,10 @@ func (deployer *Deployer) InspectContainer(id string) (*docker.Container, error)
 func (deployer *Deployer) StopContainers(containers []docker.APIContainers) {
 	for _, container := range containers {
 		log.Println("Stopping container", container.ID, container.Names)
+		if slack != nil {
+			slack.Send(SlackPayload{Text: "Stopping container " + strings.Join(container.Names, " ")})
+		}
+
 		err := deployer.docker.StopContainer(container.ID, deployer.killTimeout)
 		if err != nil {
 			log.Println("Stop container", err)
@@ -69,7 +74,8 @@ func (deployer *Deployer) StopStaleContainers() {
 	containers, err := deployer.FindStaleContainers()
 	if err != nil {
 		log.Println("FindStaleContainers", err)
-	} else {
-		deployer.StopContainers(containers)
+		return
 	}
+
+	deployer.StopContainers(containers)
 }

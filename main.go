@@ -27,6 +27,8 @@ var (
 	registry          = flag.String("registry", "https://index.docker.io/v1/", "URL of docker registry.")
 	strongConsistency = flag.Bool("strong_consistency", false, "Set etcd consistency level as strong.")
 	webhookPath       = flag.String("webhook_path", "/api/dockerhub/webhook", "Path to webhook from Docker Hub.")
+	slackWebhookURL   = flag.String("slack_webhook_url", os.Getenv("SLACK_WEBHOOK_URL"), "Slack incoming webhook url (optional)")
+	slack             *SlackClient
 )
 
 func main() {
@@ -61,6 +63,10 @@ func main() {
 
 	deployer := NewDeployer(docker, *registry, auth, etcd, *etcdPrefix, uint(*killTimeout), *repullPeriod)
 	deployer.RegisterDockerHubWebhook(*webhookPath)
+
+	if *slackWebhookURL != "" {
+		slack = NewSlackClient(*slackWebhookURL)
+	}
 
 	log.Fatal(http.ListenAndServe(*listenAddr, nil))
 }

@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 	"time"
 )
+
+var dockerfileRegexp = regexp.MustCompile(`docker build -t [^ ]+`)
 
 func (deployer *Deployer) RegisterDockerHubWebhook(path string) {
 	http.HandleFunc(path, deployer.DockerHubWebhookHandler)
@@ -17,7 +20,9 @@ func (deployer *Deployer) RegisterDockerHubWebhook(path string) {
 type DockerHubWebhook struct {
 	CallbackURL string `json:"callback_url"`
 	Repository  struct {
-		RepoName string `json:"repo_name"`
+		RepoName   string `json:"repo_name"`
+		RepoURL    string `json:"repo_url"`
+		Dockerfile string `json:"dockerfile"`
 	} `json:"repository"`
 }
 
@@ -37,7 +42,16 @@ func (deployer *Deployer) DockerHubWebhookHandler(rw http.ResponseWriter, req *h
 	}
 
 	repo := webhook.Repository.RepoName
-	log.Println("Webhook received for", repo)
+	repoURL := webhook.Repository.RepoURL
+	build := dockerfileRegexp.FindString(webhook.Repository.Dockerfile)
+	text := repo + ": Build complete for " + build + " <" + repoURL + ">"
+	log.Println("Webhook received for", text)
+	if slack != nil {
+		if err := slack.Send(SlackPayload{Text: text}); err != nil {
+			log.Println("Slack error: ", err)
+		}
+	}
+
 	now := time.Now().String()
 
 	callback := DockerHubCallback{
@@ -60,7 +74,11 @@ func (deployer *Deployer) DockerHubWebhookHandler(rw http.ResponseWriter, req *h
 		}
 	}
 
-	if webhook.CallbackURL == "" {
+	deployer.DockerHubDoCallback(webhook.CallbackURL, callback)
+}
+
+func (deployer *Deployer) DockerHubDoCallback(callbackURL string, callback DockerHubCallback) {
+	if callbackURL == "" {
 		log.Println("webhook.CallbackURL not specified")
 		return
 	}
@@ -71,14 +89,17 @@ func (deployer *Deployer) DockerHubWebhookHandler(rw http.ResponseWriter, req *h
 		return
 	}
 
-	resp, err := http.Post(webhook.CallbackURL, "application/json", bytes.NewBuffer(jsonCallback))
+	resp, err := http.Post(callbackURL, "application/json", bytes.NewBuffer(jsonCallback))
 	if err != nil {
 		log.Println("Webhook callback POST error:", err)
-	} else if resp.StatusCode != 200 {
+		return
+	}
+
+	// Discard body
+	resp.Body.Close()
+
+	if resp.StatusCode != 200 {
 		log.Println("Webhook callback POST status:", resp.StatusCode)
-	} else {
-		// Discard body
-		resp.Body.Close()
 	}
 }
 
