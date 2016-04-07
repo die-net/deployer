@@ -72,6 +72,8 @@ RestartSec=1m
 Global=true
 ```
 
+The above fleet unit assumes you've also written the .dockercfg credentials file to /home/core/.dockercfg (perhaps by running ```docker login```).  It maps ```/var/run/docker.sock``` into the container so deployer has access to the docker API on the local machine.
+
 Set Github to notify Docker Hub when anything is committed to ```myorg/foo```, Docker Hub kicks off a build, which then is configured to send a webhook to a qa deployer URL when the build completes.
 
 All commandline flags:
