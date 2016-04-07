@@ -1,7 +1,7 @@
 Deployer
 ========
 
-An simple Go-based continuous deployment system, based on catching webhooks from the Docker Hub build service.
+A simple Go-based continuous deployment system, based on catching webhooks from the Docker Hub build service.
 
 Goals
 -----
@@ -21,7 +21,7 @@ Workflow
 * Deployer writes repo and timestamp to etcd.
 * The deployer on each machine is watching etcd, and sees that a given repo has been updated.
 * It uses [go-dockerclient](https://github.com/fsouza/go-dockerclient) to ask Docker which image repotags we have on the local machine. It starts a docker pull for each image found belonging to a given repotag.
-* When the docker pull is complete, it compares the list of running containers against the list of images.  If any running containers have a newer image available, they are sent a "docker stop".
+* When the docker pull is complete, it compares the list of running containers against the list of images.  If any running containers have a newer image available, they are sent a ```docker stop``` at which point the fleet unit restarts the app using the new image.
 * Slack is optionally notified that the deploy is done.
 
 Using Deployer

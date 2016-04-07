@@ -13,7 +13,7 @@ type SlackPayload struct {
 	UnfurlLinks bool   `json:"unfurl_links,omitempty"`
 	Username    string `json:"username,omitempty"`
 	IconEmoji   string `json:"icon_emoji,omitempty"`
-	IconUrl     string `json:"icon_url,omitempty"`
+	IconURL     string `json:"icon_url,omitempty"`
 	Channel     string `json:"channel,omitempty"`
 	Text        string `json:"text"`
 }

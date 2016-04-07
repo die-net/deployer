@@ -12,7 +12,7 @@ var (
 	ErrCfgNotFound = fmt.Errorf("Dockercfg is missing entry for registry.")
 )
 
-// Undocumented format for ~/.dockercfg file.
+// DockerCfg is the undocumented format for ~/.dockercfg file.
 type DockerCfg map[string]struct {
 	docker.AuthConfiguration        // Decode most fields directly into our return format.
 	Auth                     string `json:"auth"` // Allow "auth" field too, so we can convert.

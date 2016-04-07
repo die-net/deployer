@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// Find valid repotags in the list of local images.  Accepts 3 forms:
+// FindRepoTags finds valid repotags in the list of local images.  Accepts 3 forms:
 // "*"        - Match any repotag.
 // "foo"      - Match any repotag in the repo "foo".
 // "foo:bar"  - Exact match the repotag "foo:bar" if it exists.

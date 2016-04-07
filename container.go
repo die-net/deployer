@@ -12,7 +12,7 @@ var (
 	IsID = regexp.MustCompile("^[0-9a-f]{12,}$")
 )
 
-// A filter func returns true if the container should be added to list.
+// FilterContainer is a filter func returns true if the container should be added to list.
 type FilterContainer func(apicontainer *docker.APIContainers) bool
 
 func (deployer *Deployer) FindContainers(options docker.ListContainersOptions, filter FilterContainer) ([]docker.APIContainers, error) {
