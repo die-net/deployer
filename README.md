@@ -1,4 +1,4 @@
-Deployer
+Deployer [![Build Status](https://travis-ci.org/die-net/deployer.svg?branch=master)](https://travis-ci.org/die-net/deployer)
 ========
 
 A simple Go-based continuous deployment system, based on catching webhooks from the Docker Hub build service.
