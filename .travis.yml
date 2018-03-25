@@ -12,8 +12,8 @@ install:
   - # Do nothing.
 
 script:
-  - go get -t -d -v ./...
+  - go get -d -t -v github.com/die-net/deployer
   - rm -f gocode/src/github.com/coreos/go-etcd/etcd/response.generated.go
-  - go get -t -v ./...
+  - go get -t -v github.com/die-net/deployer
   - diff -u <(echo -n) <(gofmt -d -s .)
   - go vet ./...
