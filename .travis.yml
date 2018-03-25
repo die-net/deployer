@@ -5,13 +5,15 @@ language: go
 
 go:
   - 1.7.6
-  - 1.8.5
-  - 1.9.2
+  - 1.8.7
+  - 1.9.4
 
 install:
   - # Do nothing.
 
 script:
+  - go get -t -d -v ./...
+  - rm -f gocode/src/github.com/coreos/go-etcd/etcd/response.generated.go
   - go get -t -v ./...
   - diff -u <(echo -n) <(gofmt -d -s .)
   - go vet ./...
