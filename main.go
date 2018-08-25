@@ -45,7 +45,9 @@ func main() {
 	etcd := goetcd.NewClient(strings.Split(*etcdNodes, ","))
 	etcd.SetDialTimeout(*etcdDialTimeout)
 	if *strongConsistency {
-		etcd.SetConsistency(goetcd.STRONG_CONSISTENCY)
+		if err := etcd.SetConsistency(goetcd.STRONG_CONSISTENCY); err != nil {
+			log.Fatalln("etcd.Setconsistency: ", err)
+		}
 	}
 
 	// Add a delay for each retry attempt

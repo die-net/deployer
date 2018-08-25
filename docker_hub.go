@@ -85,7 +85,10 @@ func (deployer *Deployer) DockerHubDoCallback(callbackURL string, callback Docke
 	}
 
 	// Discard body
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		log.Println("Webhook callback body.Close() error:", err)
+		return
+	}
 
 	if resp.StatusCode != 200 {
 		log.Println("Webhook callback POST status:", resp.StatusCode)

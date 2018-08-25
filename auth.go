@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrCfgNotFound = fmt.Errorf("Dockercfg is missing entry for registry.")
+	ErrCfgNotFound = fmt.Errorf("dockercfg is missing entry for registry")
 )
 
 // DockerCfg is the undocumented format for ~/.dockercfg file.

@@ -73,7 +73,7 @@ func (deployer *Deployer) repoTimerWorker(period time.Duration) {
 
 func (deployer *Deployer) repoUpdateWorker() {
 	for repo := range deployer.repoUpdate {
-		deployer.ImageUpdateRepo(repo)
+		_ = deployer.ImageUpdateRepo(repo)
 		deployer.StopStaleContainers()
 	}
 }

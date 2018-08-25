@@ -27,7 +27,7 @@ type SlackClient struct {
 // NewSlackClient returns a Client with the provided webhook url (default timeout to 10 seconds)
 func NewSlackClient(webhook, username string) *SlackClient {
 	httpClient := http.Client{
-		Timeout: time.Duration(10 * time.Second),
+		Timeout: 10 * time.Second,
 	}
 
 	c := &SlackClient{
