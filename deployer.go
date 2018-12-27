@@ -1,9 +1,10 @@
 package main
 
 import (
+	"time"
+
 	goetcd "github.com/coreos/go-etcd/etcd"
 	godocker "github.com/fsouza/go-dockerclient"
-	"time"
 )
 
 type Deployer struct {

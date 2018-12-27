@@ -5,10 +5,11 @@ package main
 // request, for future logging/display.
 
 import (
-	docker "github.com/fsouza/go-dockerclient"
 	"log"
 	"strings"
 	"time"
+
+	docker "github.com/fsouza/go-dockerclient"
 )
 
 // FindRepoTags finds valid repotags in the list of local images.  Accepts 3 forms:
@@ -23,7 +24,7 @@ func (deployer *Deployer) FindRepoTags(repo string) ([]string, error) {
 
 	prefix := false
 	if repo != "*" && !strings.Contains(repo, ":") {
-		repo = repo + ":"
+		repo += ":"
 		prefix = true
 	}
 	repotags := make([]string, 0, 5)

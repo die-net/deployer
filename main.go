@@ -2,8 +2,6 @@ package main
 
 import (
 	"flag"
-	goetcd "github.com/coreos/go-etcd/etcd"
-	godocker "github.com/fsouza/go-dockerclient"
 	"log"
 	"net/http"
 	_ "net/http/pprof" // Adds http://*/debug/pprof/ to default mux.
@@ -11,6 +9,9 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	goetcd "github.com/coreos/go-etcd/etcd"
+	godocker "github.com/fsouza/go-dockerclient"
 )
 
 var (

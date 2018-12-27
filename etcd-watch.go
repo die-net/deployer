@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	goetcd "github.com/coreos/go-etcd/etcd"
 	"io"
 	"log"
 	"strings"
 	"time"
+
+	goetcd "github.com/coreos/go-etcd/etcd"
 )
 
 type Watch struct {

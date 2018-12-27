@@ -4,8 +4,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	docker "github.com/fsouza/go-dockerclient"
 	"io/ioutil"
+
+	docker "github.com/fsouza/go-dockerclient"
 )
 
 var (

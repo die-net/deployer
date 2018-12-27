@@ -1,11 +1,12 @@
 package main
 
 import (
-	docker "github.com/fsouza/go-dockerclient"
 	"log"
 	"regexp"
 	"sort"
 	"strings"
+
+	docker "github.com/fsouza/go-dockerclient"
 )
 
 var (
