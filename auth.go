@@ -9,9 +9,7 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 )
 
-var (
-	ErrCfgNotFound = fmt.Errorf("dockercfg is missing entry for registry")
-)
+var ErrCfgNotFound = fmt.Errorf("dockercfg is missing entry for registry")
 
 // DockerCfg is the undocumented format for ~/.dockercfg file.
 type DockerCfg map[string]struct {

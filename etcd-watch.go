@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"strings"
@@ -37,7 +38,8 @@ func (watch *Watch) worker() {
 
 	if _, err := watch.client.SetDir(watch.prefix, 0); err != nil {
 		// Ignore error code 102 (directory exists).
-		if e, ok := err.(*goetcd.EtcdError); !ok || e.ErrorCode != 102 {
+		var e *goetcd.EtcdError
+		if errors.As(err, &e) && e.ErrorCode != 102 {
 			log.Println("Watch etcd.SetDir error", watch.prefix, err)
 			return
 		}
@@ -72,13 +74,15 @@ func (watch *Watch) worker() {
 			if err != nil {
 				// After 5 minutes, etcd either closes the connection
 				// or returns a json.SyntaxError. Retry watch.
-				if _, ok := err.(*json.SyntaxError); ok || err == io.EOF {
+				var se *json.SyntaxError
+				if errors.Is(err, io.EOF) || errors.As(err, &se) {
 					log.Println("Watch etcd.Watch retrying connection", watch.prefix)
 					break
 				}
 
 				// 401 means our watchIndex is too old, and we need to Get a new one.
-				if e, ok := err.(*goetcd.EtcdError); ok && e.ErrorCode == 401 {
+				var ee *goetcd.EtcdError
+				if errors.As(err, &ee) && ee.ErrorCode == 401 {
 					log.Println("Watch etcd.Watch watchIndex", watch.watchIndex+1, "too old", watch.prefix)
 					break
 				}

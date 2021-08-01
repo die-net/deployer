@@ -9,9 +9,7 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 )
 
-var (
-	IsID = regexp.MustCompile("^[0-9a-f]{12,}$")
-)
+var IsID = regexp.MustCompile("^[0-9a-f]{12,}$")
 
 // FilterContainer is a filter func returns true if the container should be added to list.
 type FilterContainer func(apicontainer *docker.APIContainers) bool
@@ -22,10 +20,11 @@ func (deployer *Deployer) FindContainers(options docker.ListContainersOptions, f
 		return nil, err
 	}
 
-	ret := make([]docker.APIContainers, 0, 5)
-	for _, apicontainer := range apicontainers {
-		if filter(&apicontainer) {
-			ret = append(ret, apicontainer)
+	ret := make([]docker.APIContainers, 0, len(apicontainers))
+	for i := range apicontainers {
+		apicontainer := &apicontainers[i]
+		if filter(apicontainer) {
+			ret = append(ret, *apicontainer)
 		}
 	}
 
@@ -33,13 +32,15 @@ func (deployer *Deployer) FindContainers(options docker.ListContainersOptions, f
 }
 
 func (deployer *Deployer) InspectContainer(id string) (*docker.Container, error) {
-	return deployer.docker.InspectContainer(id)
+	return deployer.docker.InspectContainerWithOptions(docker.InspectContainerOptions{ID: id})
 }
 
 func (deployer *Deployer) StopContainers(containers []docker.APIContainers) {
 	names := []string{}
 
-	for _, container := range containers {
+	for i := range containers {
+		container := &containers[i]
+
 		log.Println("Stopping container", container.ID, container.Names)
 		names = append(names, container.Names...)
 
@@ -52,7 +53,7 @@ func (deployer *Deployer) StopContainers(containers []docker.APIContainers) {
 	if slack != nil && len(names) > 0 {
 		sort.Strings(names)
 		// Container Names are prefixed by "/".
-		text := "Deploying " + strings.Replace(strings.TrimPrefix(strings.Join(names, " "), "/"), " /", ", ", -1)
+		text := "Deploying " + strings.ReplaceAll(strings.TrimPrefix(strings.Join(names, " "), "/"), " /", ", ")
 		if err := slack.Send(SlackPayload{Text: text}); err != nil {
 			log.Println("Slack error: ", err)
 		}

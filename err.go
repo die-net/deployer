@@ -4,6 +4,4 @@ import (
 	"errors"
 )
 
-var (
-	ErrNoTag = errors.New("docker image tag not specified")
-)
+var ErrNoTag = errors.New("docker image tag not specified")
