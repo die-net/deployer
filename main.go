@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
-	_ "net/http/pprof" // Adds http://*/debug/pprof/ to default mux.
+	_ "net/http/pprof" //nolint:gosec // TODO: Expose this on its own port.
 	"os"
 	"runtime"
 	"strings"
@@ -16,7 +16,7 @@ import (
 
 var (
 	endpoint          = flag.String("docker", "unix:///var/run/docker.sock", "Docker endpoint to connect to.")
-	etcdNodes         = flag.String("etcd_nodes", "http://127.0.0.1:4001", "Comma-seperated list of etcd nodes to connect to.")
+	etcdNodes         = flag.String("etcd_nodes", "http://127.0.0.1:4001", "Comma-separated list of etcd nodes to connect to.")
 	etcdPrefix        = flag.String("etcd_prefix", "/deployer", "Path prefix for etcd nodes.")
 	etcdDialTimeout   = flag.Duration("etcd_dial_timeout", 5*time.Second, "How long to wait to connect to etcd nodes.")
 	etcdRetryDelay    = flag.Duration("etcd_retry_delay", 2*time.Second, "How long to between request retries.")

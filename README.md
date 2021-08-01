@@ -1,4 +1,4 @@
-Deployer [![Build Status](https://travis-ci.org/die-net/deployer.svg?branch=master)](https://travis-ci.org/die-net/deployer)
+deployer [![Build Status](https://github.com/die-net/deployer/actions/workflows/go-test.yml/badge.svg)](https://github.com/die-net/deployer/actions/workflows/go-test.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/die-net/deployer)](https://goreportcard.com/report/github.com/die-net/deployer)
 ========
 
 A simple Go-based continuous deployment system, based on catching webhooks from the Docker Hub build service.

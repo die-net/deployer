@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -60,7 +60,7 @@ func (c *SlackClient) Send(p SlackPayload) error {
 	}
 
 	if string(s) != "ok" {
-		return errors.New("Slack error: " + string(s))
+		return fmt.Errorf("Slack error: %s", string(s))
 	}
 
 	return nil
