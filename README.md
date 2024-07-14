@@ -1,6 +1,10 @@
 deployer [![Build Status](https://github.com/die-net/deployer/actions/workflows/go-test.yml/badge.svg)](https://github.com/die-net/deployer/actions/workflows/go-test.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/die-net/deployer)](https://goreportcard.com/report/github.com/die-net/deployer)
 ========
 
+## This project is now archived.  It has been many years since I've either used Docker Hub or directly deployed Docker containers rather than through Kubernetes.
+
+---
+
 A simple Go-based continuous deployment system, based on catching webhooks from the Docker Hub build service.
 
 Goals
